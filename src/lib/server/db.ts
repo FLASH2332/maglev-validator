@@ -391,6 +391,7 @@ export function insertGtfsRtSnapshot(timestamp: string, data: unknown): void {
 export interface GetGtfsRtSnapshotsParams {
 	since?: string;
 	limit?: number;
+	offset?: number;
 }
 
 export function getGtfsRtSnapshots(params: GetGtfsRtSnapshotsParams = {}): GtfsRtSnapshotEntry[] {
@@ -409,6 +410,11 @@ export function getGtfsRtSnapshots(params: GetGtfsRtSnapshotsParams = {}): GtfsR
 	if (params.limit) {
 		query += ' LIMIT ?';
 		queryParams.push(params.limit);
+	}
+
+	if (params.offset) {
+		query += ' OFFSET ?';
+		queryParams.push(params.offset);
 	}
 
 	const stmt = db.prepare(query);
