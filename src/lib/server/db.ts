@@ -539,15 +539,7 @@ export interface QueryGtfsStaticDataResult {
 
 export function queryGtfsStaticData(params: QueryGtfsStaticDataParams): QueryGtfsStaticDataResult {
 	const db = getDatabase();
-	const {
-		fileId,
-		search,
-		searchColumns,
-		sortColumn,
-		sortDirection = 'asc',
-		page = 1,
-		pageSize = 50
-	} = params;
+	const { fileId, search, sortColumn, sortDirection = 'asc', page = 1, pageSize = 50 } = params;
 
 	let countQuery = 'SELECT COUNT(*) as count FROM gtfs_static_data WHERE file_id = ?';
 	const countParams: unknown[] = [fileId];
@@ -575,7 +567,7 @@ export function queryGtfsStaticData(params: QueryGtfsStaticDataParams): QueryGtf
 	const dataStmt = db.prepare(dataQuery);
 	const rawRows = dataStmt.all(...dataParams) as { row_data: string }[];
 
-	let rows = rawRows.map((r) => JSON.parse(r.row_data) as Record<string, string>);
+	const rows = rawRows.map((r) => JSON.parse(r.row_data) as Record<string, string>);
 
 	if (sortColumn) {
 		rows.sort((a, b) => {
@@ -728,7 +720,9 @@ export function createGtfsViews(feedId: number): void {
 	for (const view of existingViews) {
 		try {
 			db.exec(`DROP VIEW IF EXISTS "${view.name}"`);
-		} catch {}
+		} catch {
+			console.warn(`Failed to drop view ${view.name}`);
+		}
 	}
 
 	for (const file of files) {

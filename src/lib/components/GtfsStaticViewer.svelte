@@ -251,7 +251,6 @@
 	let currentProcessingFile = $state('');
 	let error = $state<string | null>(null);
 
-	let currentFeedId = $state<number | null>(null);
 	let gtfsFiles = $state<GtfsFile[]>([]);
 	let selectedFileId = $state<number | null>(null);
 	let selectedFileName = $state<string | null>(null);
@@ -383,7 +382,7 @@
 			const data = await response.json();
 			if (data.feeds && data.feeds.length > 0) {
 				const latestFeed = data.feeds[0] as DbFeed;
-				currentFeedId = latestFeed.id;
+
 				await loadFeedFiles(latestFeed.id);
 			}
 		} catch (e) {
@@ -426,20 +425,22 @@
 
 		loadingData = true;
 		try {
-			const params = new URLSearchParams({
+			const queryParams: Record<string, string> = {
 				action: 'query',
 				fileId: String(selectedFileId),
 				page: String(currentPage),
 				pageSize: String(pageSize)
-			});
+			};
 
 			if (debouncedSearchQuery) {
-				params.set('search', debouncedSearchQuery);
+				queryParams.search = debouncedSearchQuery;
 			}
 			if (sortColumn) {
-				params.set('sortColumn', sortColumn);
-				params.set('sortDirection', sortDirection);
+				queryParams.sortColumn = sortColumn;
+				queryParams.sortDirection = sortDirection;
 			}
+
+			const params = new URLSearchParams(queryParams);
 
 			const response = await fetch(`/api/gtfs-static-db?${params}`);
 			const data = await response.json();
@@ -464,7 +465,6 @@
 
 	$effect(() => {
 		if (selectedFileId) {
-			const _ = { debouncedSearchQuery, sortColumn, sortDirection, currentPage, pageSize };
 			queryData();
 		}
 	});
@@ -483,55 +483,6 @@
 		if (typeof localStorage !== 'undefined') {
 			localStorage.setItem('gtfsStaticUrls', JSON.stringify(savedUrls));
 		}
-	}
-
-	function parseCSV(content: string): { columns: string[]; data: Record<string, string>[] } {
-		if (content.charCodeAt(0) === 0xfeff) {
-			content = content.slice(1);
-		}
-
-		const lines = content.trim().split(/\r?\n/);
-		if (lines.length === 0) return { columns: [], data: [] };
-
-		const columns = parseCSVLine(lines[0]);
-		const data: Record<string, string>[] = [];
-
-		for (let i = 1; i < lines.length; i++) {
-			if (!lines[i].trim()) continue;
-			const values = parseCSVLine(lines[i]);
-			const row: Record<string, string> = {};
-			for (let j = 0; j < columns.length; j++) {
-				row[columns[j]] = values[j] || '';
-			}
-			data.push(row);
-		}
-
-		return { columns, data };
-	}
-
-	function parseCSVLine(line: string): string[] {
-		const result: string[] = [];
-		let current = '';
-		let inQuotes = false;
-
-		for (let i = 0; i < line.length; i++) {
-			const char = line[i];
-			if (char === '"') {
-				if (inQuotes && line[i + 1] === '"') {
-					current += '"';
-					i++;
-				} else {
-					inQuotes = !inQuotes;
-				}
-			} else if (char === ',' && !inQuotes) {
-				result.push(current.trim());
-				current = '';
-			} else {
-				current += char;
-			}
-		}
-		result.push(current.trim());
-		return result;
 	}
 
 	function yieldToUI(): Promise<void> {
@@ -635,8 +586,6 @@
 			if (!response.ok || result.error) {
 				throw new Error(result.error || 'Failed to upload to database');
 			}
-
-			currentFeedId = result.feedId;
 
 			gtfsFiles = result.files.map(
 				(f: { id: number; filename: string; columns: string[]; rowCount: number }) => ({
@@ -776,11 +725,6 @@
 		}
 	}
 
-	function convertGtfsTime(timeStr: string): string {
-		if (!timeStr || !convertTimes) return timeStr;
-		return convertGtfsTimeFormatted(timeStr);
-	}
-
 	function convertGtfsTimeFormatted(timeStr: string): string {
 		if (!timeStr) return timeStr;
 
@@ -801,11 +745,6 @@
 
 		const formatted = `${displayHours}:${minutes}:${seconds} ${period}`;
 		return isNextDay ? `${formatted} (+1 day)` : formatted;
-	}
-
-	function convertGtfsDate(dateStr: string): string {
-		if (!dateStr || !convertDates) return dateStr;
-		return convertGtfsDateFormatted(dateStr);
 	}
 
 	function convertGtfsDateFormatted(dateStr: string): string {
@@ -971,16 +910,18 @@
 		if (!file) return;
 
 		try {
-			const params = new URLSearchParams({
+			const queryParams: Record<string, string> = {
 				action: 'query',
 				fileId: String(selectedFileId),
 				page: '1',
 				pageSize: '100000'
-			});
+			};
 
 			if (debouncedSearchQuery) {
-				params.set('search', debouncedSearchQuery);
+				queryParams.search = debouncedSearchQuery;
 			}
+
+			const params = new URLSearchParams(queryParams);
 
 			const response = await fetch(`/api/gtfs-static-db?${params}`);
 			const data = await response.json();
@@ -1251,7 +1192,7 @@
 									<div
 										class="absolute top-full right-0 z-10 mt-1 hidden max-h-48 w-80 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg group-hover:block dark:border-gray-700 dark:bg-gray-800"
 									>
-										{#each savedUrls as url}
+										{#each savedUrls as url (url)}
 											<div
 												class="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700"
 											>
@@ -1504,7 +1445,7 @@
 							</h3>
 						</div>
 						<div class="max-h-[600px] overflow-auto p-2">
-							{#each gtfsFiles as file}
+							{#each gtfsFiles as file (file.id)}
 								{@const info = GTFS_FILES[file.name]}
 								<button
 									onclick={() => selectFile(file)}
@@ -1581,8 +1522,6 @@
 
 				<div class="col-span-9">
 					{#if selectedFileName}
-						{@const file = getSelectedFileInfo()}
-
 						<div
 							class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
 						>
@@ -1714,7 +1653,7 @@
 										class="sticky top-0 bg-gray-50 text-xs text-gray-700 uppercase dark:bg-gray-800 dark:text-gray-400"
 									>
 										<tr>
-											{#each currentColumns as column}
+											{#each currentColumns as column (column)}
 												<th class="px-4 py-3 whitespace-nowrap">
 													<button
 														onclick={() => toggleSort(column)}
@@ -1766,9 +1705,9 @@
 									</thead>
 									<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
 										{#key renderKey}
-											{#each displayData as row, idx}
+											{#each displayData as row, idx (idx)}
 												<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-													{#each currentColumns as column}
+													{#each currentColumns as column (column)}
 														<td
 															class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100"
 														>
@@ -1937,7 +1876,7 @@
 							{#if availableTables.length === 0}
 								<p class="p-3 text-sm text-gray-500 dark:text-gray-400">Loading tables...</p>
 							{:else}
-								{#each availableTables as table}
+								{#each availableTables as table (table.name)}
 									<button
 										onclick={() => insertTableName(table.name)}
 										class="mb-1 w-full rounded-lg px-3 py-2 text-left text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -1976,7 +1915,7 @@
 							{#if queryHistory.length === 0}
 								<p class="p-3 text-sm text-gray-500 dark:text-gray-400">No queries yet</p>
 							{:else}
-								{#each queryHistory as query}
+								{#each queryHistory as query (query)}
 									<button
 										onclick={() => loadQueryFromHistory(query)}
 										class="mb-1 w-full truncate rounded-lg px-3 py-2 text-left font-mono text-xs text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -2009,7 +1948,7 @@
 									No favorites yet. Click the star icon to save a query.
 								</p>
 							{:else}
-								{#each favoriteQueries as fav}
+								{#each favoriteQueries as fav (fav.name)}
 									<div
 										class="group flex items-center gap-1 rounded px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800"
 									>
@@ -2286,15 +2225,15 @@
 										class="sticky top-0 bg-gray-50 text-xs text-gray-700 uppercase dark:bg-gray-800 dark:text-gray-400"
 									>
 										<tr>
-											{#each sqlResult.columns as column}
+											{#each sqlResult.columns as column (column)}
 												<th class="px-4 py-3 font-semibold whitespace-nowrap">{column}</th>
 											{/each}
 										</tr>
 									</thead>
 									<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-										{#each paginatedSqlRows as row}
+										{#each paginatedSqlRows as row, i (i)}
 											<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-												{#each sqlResult.columns as column}
+												{#each sqlResult.columns as column (column)}
 													<td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">
 														{row[column] ?? ''}
 													</td>

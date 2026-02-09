@@ -8,9 +8,8 @@ export async function POST({ request }: { request: Request }) {
 			return json({ error: 'URL is required' }, { status: 400 });
 		}
 
-		let parsedUrl: URL;
 		try {
-			parsedUrl = new URL(url);
+			new URL(url);
 		} catch {
 			return json({ error: 'Invalid URL format' }, { status: 400 });
 		}
