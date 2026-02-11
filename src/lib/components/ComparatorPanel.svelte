@@ -11,6 +11,8 @@
 	let loading = $state(false);
 	let error = $state<string | undefined>(undefined);
 	let isLogging = $state(false);
+	let currentUrl1 = $state('');
+	let currentUrl2 = $state('');
 
 	let server1Base = $state('http://localhost:4000/api/where/');
 	let server2Base = $state('https://unitrans-api.server.onebusawaycloud.com/api/where/');
@@ -244,6 +246,17 @@
 		loading = true;
 		error = undefined;
 
+		if (!server1Base || !server1Base.startsWith('http')) {
+			error = 'Server 1 base URL must be an absolute URL (start with http:// or https://)';
+			loading = false;
+			return;
+		}
+		if (!server2Base || !server2Base.startsWith('http')) {
+			error = 'Server 2 base URL must be an absolute URL (start with http:// or https://)';
+			loading = false;
+			return;
+		}
+
 		const endpoint = endpoints.find((e) => e.id === selectedEndpoint);
 		if (!endpoint) {
 			loading = false;
@@ -255,6 +268,9 @@
 		try {
 			const url1 = buildUrl(server1Base, endpoint, params);
 			const url2 = buildUrl(server2Base, endpoint, params);
+
+			currentUrl1 = url1;
+			currentUrl2 = url2;
 
 			const timeoutPromise = new Promise((_, reject) => {
 				timeoutId = window.setTimeout(() => {
@@ -582,6 +598,32 @@
 			</span>
 		</div>
 	</div>
+
+	{#if currentUrl1 || currentUrl2}
+		<div
+			class="mb-4 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50"
+		>
+			<div class="text-xs font-medium text-gray-500 dark:text-gray-400">Fetched URLs:</div>
+			{#if currentUrl1}
+				<div class="flex items-start gap-2">
+					<span
+						class="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+						>1</span
+					>
+					<code class="text-xs break-all text-gray-700 dark:text-gray-300">{currentUrl1}</code>
+				</div>
+			{/if}
+			{#if currentUrl2}
+				<div class="flex items-start gap-2">
+					<span
+						class="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
+						>2</span
+					>
+					<code class="text-xs break-all text-gray-700 dark:text-gray-300">{currentUrl2}</code>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<DiffViewer {response1} {response2} {focusPath} {ignoredKeys} />
 {:else if !loading}
