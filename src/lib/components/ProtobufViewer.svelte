@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SimpleJsonTree from './SimpleJsonTree.svelte';
 	import { filterGTFSEntities, getSearchStats } from '$lib/utils/search';
+	import { protobufState } from '$lib/panelState.svelte';
 
 	interface Props {
 		tripUpdates: unknown[];
@@ -108,63 +109,64 @@
 	}
 
 	$effect(() => {
-		if (activeTab === 'rawText') {
+		if (protobufState.activeTab === 'rawText') {
 			void activeRawTextTab;
 			generateRawTextAsync();
 		}
 	});
 
-	let activeTab = $state<'tripUpdates' | 'vehiclePositions' | 'alerts' | 'header' | 'rawText'>(
-		'tripUpdates'
-	);
 	let activeRawTextTab = $state<'tripUpdates' | 'vehiclePositions' | 'alerts'>('tripUpdates');
 
-	let searchQuery = $state('');
-	let debouncedQuery = $state('');
 	let isSearching = $state(false);
 
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	function updateDebouncedQuery(query: string) {
 		if (debounceTimer) clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
-			debouncedQuery = query;
+			protobufState.debouncedQuery = query;
 			isSearching = false;
 		}, 300);
 	}
 
 	function handleSearchInput(e: Event) {
 		const value = (e.target as HTMLInputElement).value;
-		searchQuery = value;
+		protobufState.searchQuery = value;
 		isSearching = true;
 		updateDebouncedQuery(value);
 	}
 
 	function clearSearch() {
-		searchQuery = '';
-		debouncedQuery = '';
+		protobufState.searchQuery = '';
+		protobufState.debouncedQuery = '';
 		isSearching = false;
 	}
 
 	const filteredTripUpdates = $derived(
-		filterGTFSEntities(tripUpdates, debouncedQuery, 'tripUpdates')
+		filterGTFSEntities(tripUpdates, protobufState.debouncedQuery, 'tripUpdates')
 	);
 	const filteredVehiclePositions = $derived(
-		filterGTFSEntities(vehiclePositions, debouncedQuery, 'vehiclePositions')
+		filterGTFSEntities(vehiclePositions, protobufState.debouncedQuery, 'vehiclePositions')
 	);
-	const filteredAlerts = $derived(filterGTFSEntities(alerts, debouncedQuery, 'alerts'));
+	const filteredAlerts = $derived(
+		filterGTFSEntities(alerts, protobufState.debouncedQuery, 'alerts')
+	);
 
 	const searchStats = $derived(() => {
-		switch (activeTab) {
+		switch (protobufState.activeTab) {
 			case 'tripUpdates':
-				return getSearchStats(tripUpdates.length, filteredTripUpdates.length, debouncedQuery);
+				return getSearchStats(
+					tripUpdates.length,
+					filteredTripUpdates.length,
+					protobufState.debouncedQuery
+				);
 			case 'vehiclePositions':
 				return getSearchStats(
 					vehiclePositions.length,
 					filteredVehiclePositions.length,
-					debouncedQuery
+					protobufState.debouncedQuery
 				);
 			case 'alerts':
-				return getSearchStats(alerts.length, filteredAlerts.length, debouncedQuery);
+				return getSearchStats(alerts.length, filteredAlerts.length, protobufState.debouncedQuery);
 			default:
 				return { message: '', hasResults: true };
 		}
@@ -235,7 +237,7 @@
 	]);
 
 	const activeData = $derived(() => {
-		switch (activeTab) {
+		switch (protobufState.activeTab) {
 			case 'tripUpdates':
 				return filteredTripUpdates;
 			case 'vehiclePositions':
@@ -258,7 +260,7 @@
 	}
 
 	$effect(() => {
-		void activeTab;
+		void protobufState.activeTab;
 		globalExpand = null;
 	});
 
@@ -320,8 +322,8 @@
 		<div class="flex items-center gap-4">
 			{#each tabs as tab (tab.id)}
 				<button
-					onclick={() => (activeTab = tab.id)}
-					class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {activeTab ===
+					onclick={() => (protobufState.activeTab = tab.id)}
+					class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {protobufState.activeTab ===
 					tab.id
 						? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
 						: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'}"
@@ -383,17 +385,17 @@
 							class="rounded-full px-2 py-0.5 text-xs {tab.isLimited
 								? 'bg-amber-100 text-amber-700 dark:bg-amber-800 dark:text-amber-200'
 								: tab.id === 'alerts'
-									? activeTab === tab.id
+									? protobufState.activeTab === tab.id
 										? 'bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200'
 										: 'bg-red-100 text-red-600 dark:bg-red-700 dark:text-red-300'
-									: activeTab === tab.id
+									: protobufState.activeTab === tab.id
 										? 'bg-indigo-200 text-indigo-800 dark:bg-indigo-800 dark:text-indigo-200'
 										: 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'}"
 							title={tab.isLimited
 								? `Showing ${tab.count} of ${tab.total} (limited to prevent memory issues)`
 								: ''}
 						>
-							{#if debouncedQuery && tab.filteredCount !== tab.count}
+							{#if protobufState.debouncedQuery && tab.filteredCount !== tab.count}
 								{tab.filteredCount}/{tab.count}
 							{:else if tab.isLimited && tab.total}
 								{tab.count}/{tab.total}
@@ -406,7 +408,7 @@
 			{/each}
 		</div>
 		<div class="flex items-center gap-4">
-			{#if activeTab !== 'rawText' && activeTab !== 'header'}
+			{#if protobufState.activeTab !== 'rawText' && protobufState.activeTab !== 'header'}
 				<div class="relative">
 					<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
 						{#if isSearching}
@@ -448,12 +450,12 @@
 					</div>
 					<input
 						type="text"
-						value={searchQuery}
+						value={protobufState.searchQuery}
 						oninput={handleSearchInput}
 						placeholder="Search vehicle ID, trip, route..."
 						class="w-64 rounded-lg border border-gray-200 bg-gray-50 py-1.5 pr-8 pl-9 text-sm text-gray-700 transition-all placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500"
 					/>
-					{#if searchQuery}
+					{#if protobufState.searchQuery}
 						<button
 							onclick={clearSearch}
 							class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -471,7 +473,7 @@
 					{/if}
 				</div>
 			{/if}
-			{#if activeTab !== 'rawText'}
+			{#if protobufState.activeTab !== 'rawText'}
 				<div class="flex gap-2">
 					<button
 						onclick={expandAll}
@@ -516,7 +518,7 @@
 		</div>
 	</div>
 
-	{#if debouncedQuery && activeTab !== 'rawText' && activeTab !== 'header'}
+	{#if protobufState.debouncedQuery && protobufState.activeTab !== 'rawText' && protobufState.activeTab !== 'header'}
 		<div class="border-b border-gray-200 px-4 py-2 dark:border-gray-700">
 			<div
 				class="flex items-center gap-2 text-sm {searchStats().hasResults
@@ -548,7 +550,7 @@
 	{/if}
 
 	<div class="min-h-0 flex-1 overflow-auto p-4">
-		{#if activeTab === 'rawText'}
+		{#if protobufState.activeTab === 'rawText'}
 			<div class="flex flex-col gap-3">
 				<div class="flex flex-wrap items-center gap-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
 					<span class="text-xs font-medium text-gray-500 dark:text-gray-400">View:</span>
@@ -688,7 +690,7 @@
 					{/if}
 				</div>
 			</div>
-		{:else if activeTab === 'header'}
+		{:else if protobufState.activeTab === 'header'}
 			<SimpleJsonTree value={activeData()} {globalExpand} />
 		{:else}
 			{@const items = activeData() as unknown[]}
@@ -697,7 +699,7 @@
 					<div
 						class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700"
 					>
-						{#if activeTab === 'tripUpdates'}
+						{#if protobufState.activeTab === 'tripUpdates'}
 							<svg
 								class="h-8 w-8 text-gray-400"
 								fill="none"
@@ -710,7 +712,7 @@
 									d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
 								></path></svg
 							>
-						{:else if activeTab === 'vehiclePositions'}
+						{:else if protobufState.activeTab === 'vehiclePositions'}
 							<svg
 								class="h-8 w-8 text-gray-400"
 								fill="none"
@@ -744,9 +746,9 @@
 						{/if}
 					</div>
 					<p class="text-gray-500 dark:text-gray-400">
-						No {activeTab === 'tripUpdates'
+						No {protobufState.activeTab === 'tripUpdates'
 							? 'trip updates'
-							: activeTab === 'vehiclePositions'
+							: protobufState.activeTab === 'vehiclePositions'
 								? 'vehicle positions'
 								: 'alerts'} in this feed
 					</p>
@@ -764,7 +766,7 @@
 									>
 										#{index + 1}
 									</span>
-									{#if activeTab === 'tripUpdates'}
+									{#if protobufState.activeTab === 'tripUpdates'}
 										{@const tripUpdate = item as Record<string, unknown>}
 										{@const trip = tripUpdate.trip as Record<string, string> | undefined}
 										{@const vehicleInfo = tripUpdate.vehicle as Record<string, string> | undefined}
@@ -793,7 +795,7 @@
 												{vehicleInfo?.id || vehicleInfo?.label}
 											</span>
 										{/if}
-									{:else if activeTab === 'vehiclePositions'}
+									{:else if protobufState.activeTab === 'vehiclePositions'}
 										{@const vehicle = item as Record<string, unknown>}
 										{@const vehicleInfo = vehicle.vehicle as Record<string, string> | undefined}
 										{@const trip = vehicle.trip as Record<string, string> | undefined}
@@ -814,7 +816,7 @@
 												Trip: {trip.tripId}
 											</span>
 										{/if}
-									{:else if activeTab === 'alerts'}
+									{:else if protobufState.activeTab === 'alerts'}
 										{@const alert = item as Record<string, unknown>}
 										{@const headerText = alert.headerText as Record<string, unknown[]> | undefined}
 										{@const translation = headerText?.translation?.[0] as
@@ -845,17 +847,19 @@
 						</details>
 					{/each}
 
-					{#if onLoadMore && hasMorePages && hasMorePages[activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts']}
+					{#if onLoadMore && hasMorePages && hasMorePages[protobufState.activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts']}
 						<div class="mt-4 flex justify-center">
 							<button
 								onclick={() =>
-									onLoadMore(activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts')}
+									onLoadMore(
+										protobufState.activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts'
+									)}
 								disabled={paginationLoading?.[
-									activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts'
+									protobufState.activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts'
 								]}
 								class="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-6 py-3 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
 							>
-								{#if paginationLoading?.[activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts']}
+								{#if paginationLoading?.[protobufState.activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts']}
 									<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
 										<circle
 											class="opacity-25"
@@ -881,15 +885,15 @@
 											d="M12 4v16m0 0l-4-4m4 4l4-4"
 										/>
 									</svg>
-									Load More {activeTab === 'tripUpdates'
+									Load More {protobufState.activeTab === 'tripUpdates'
 										? 'Trip Updates'
-										: activeTab === 'vehiclePositions'
+										: protobufState.activeTab === 'vehiclePositions'
 											? 'Vehicle Positions'
 											: 'Alerts'}
 									{#if totals}
 										<span class="text-xs opacity-70">
 											({items.length} of {totals[
-												activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts'
+												protobufState.activeTab as 'tripUpdates' | 'vehiclePositions' | 'alerts'
 											]})
 										</span>
 									{/if}

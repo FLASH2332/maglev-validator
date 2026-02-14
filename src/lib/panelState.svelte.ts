@@ -68,6 +68,12 @@ export class ProtobufState {
 	loggingEnabled = $state(true);
 	lastFetchTime = $state<Date | null>(null);
 	refreshTimer: number | undefined = undefined;
+
+	searchQuery = $state('');
+	debouncedQuery = $state('');
+	activeTab = $state<'tripUpdates' | 'vehiclePositions' | 'alerts' | 'header' | 'rawText'>(
+		'tripUpdates'
+	);
 }
 
 export interface GtfsFile {
