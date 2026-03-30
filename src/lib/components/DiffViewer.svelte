@@ -2,7 +2,7 @@
 	import JsonViewer from './JsonViewer.svelte';
 	import { getByPath } from '$lib/utils/jsonCompare';
 	import { deepSearchJSON } from '$lib/utils/search';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 
 	interface Props {
 		response1: unknown;
@@ -37,7 +37,7 @@
 
 		const ID_FIELDS = ['tripId', 'id', 'activeTripId', 'routeId', 'stopId', 'vehicleId', 'blockId'];
 
-		function getId(item: any): string {
+		function getId(item: Record<string, unknown>): string {
 			for (const field of ID_FIELDS) {
 				if (item && typeof item[field] === 'string' && item[field]) {
 					return item[field];
@@ -49,7 +49,7 @@
 			return JSON.stringify(item);
 		}
 
-		function findArray(data: any): any[] {
+		function findArray(data: unknown): unknown[] {
 			if (!data) return [];
 			if (Array.isArray(data)) return data;
 
@@ -68,11 +68,11 @@
 			}
 
 			// Search recursively for first array with objects having IDs
-			function search(obj: any): any[] | null {
+			function search(obj: unknown): unknown[] | null {
 				if (!obj || typeof obj !== 'object') return null;
 				if (Array.isArray(obj)) return obj.length > 0 ? obj : null;
 
-				for (const value of Object.values(obj)) {
+				for (const value of Object.values(obj as Record<string, unknown>)) {
 					const result = search(value);
 					if (result) return result;
 				}
@@ -87,19 +87,19 @@
 
 		if (arr1.length > 0 && arr2.length > 0) {
 			// Create matched pairs by ID
-			const leftMap = new Map();
-			const rightMap = new Map();
+			const leftMap = new SvelteMap<string, unknown[]>();
+			const rightMap = new SvelteMap<string, unknown[]>();
 
 			for (const item of arr1) {
-				const id = getId(item);
+				const id = getId(item as Record<string, unknown>);
 				if (!leftMap.has(id)) leftMap.set(id, []);
-				leftMap.get(id).push(item);
+				leftMap.get(id)!.push(item);
 			}
 
 			for (const item of arr2) {
-				const id = getId(item);
+				const id = getId(item as Record<string, unknown>);
 				if (!rightMap.has(id)) rightMap.set(id, []);
-				rightMap.get(id).push(item);
+				rightMap.get(id)!.push(item);
 			}
 
 			// Get all unique IDs

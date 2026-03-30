@@ -477,7 +477,7 @@
 					class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-sm text-gray-700 transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:focus:ring-indigo-500/40"
 				/>
 				<datalist id="server1-url-history">
-					{#each server1UrlHistory as url}
+					{#each server1UrlHistory as url (url)}
 						<option value={url}></option>
 					{/each}
 				</datalist>
@@ -496,7 +496,7 @@
 					class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-sm text-gray-700 transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:focus:ring-indigo-500/40"
 				/>
 				<datalist id="server2-url-history">
-					{#each server2UrlHistory as url}
+					{#each server2UrlHistory as url (url)}
 						<option value={url}></option>
 					{/each}
 				</datalist>
@@ -544,7 +544,7 @@
 					/>
 					{#if history.length > 0}
 						<datalist id={'param-history-' + param.name}>
-							{#each history as value}
+							{#each history as value (value)}
 								<option {value}></option>
 							{/each}
 						</datalist>
