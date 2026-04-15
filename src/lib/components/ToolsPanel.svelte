@@ -11,17 +11,15 @@
 	let autoOpen = $state(true);
 	let lastSelection = $state('');
 
-	if (typeof localStorage !== 'undefined') {
+	onMount(() => {
 		const saved = localStorage.getItem('toolsAutoOpen');
 		if (saved !== null) {
 			autoOpen = saved === 'true';
 		}
-	}
+	});
 
 	$effect(() => {
-		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem('toolsAutoOpen', String(autoOpen));
-		}
+		localStorage.setItem('toolsAutoOpen', String(autoOpen));
 	});
 
 	function handleSelection() {
