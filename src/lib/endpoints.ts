@@ -74,6 +74,14 @@ export const endpoints = [
 				inPath: false,
 				default: 'true',
 				placeholder: 'true/false (optional)'
+			},
+			{
+				name: 'time',
+				label: 'Time',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Unix timestamp (optional)'
 			}
 		]
 	},
@@ -97,6 +105,22 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'includePolylines',
+				label: 'Include Polylines',
+				required: false,
+				inPath: false,
+				default: 'true',
+				placeholder: 'true/false (optional)'
+			},
+			{
+				name: 'time',
+				label: 'Time',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'YYYY-MM-DD or Unix timestamp (optional)'
 			}
 		]
 	},
@@ -120,6 +144,30 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'minutesBefore',
+				label: 'Minutes Before',
+				required: false,
+				inPath: false,
+				default: '5',
+				placeholder: 'Include vehicles arrived in previous n minutes (optional)'
+			},
+			{
+				name: 'minutesAfter',
+				label: 'Minutes After',
+				required: false,
+				inPath: false,
+				default: '35',
+				placeholder: 'Include vehicles arriving in next n minutes (optional)'
+			},
+			{
+				name: 'time',
+				label: 'Time',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Unix timestamp (optional)'
 			}
 		]
 	},
@@ -242,6 +290,38 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'includeTrip',
+				label: 'Include Trip',
+				required: false,
+				inPath: false,
+				default: 'false',
+				placeholder: 'true/false (optional)'
+			},
+			{
+				name: 'includeSchedule',
+				label: 'Include Schedule',
+				required: false,
+				inPath: false,
+				default: 'false',
+				placeholder: 'true/false (optional)'
+			},
+			{
+				name: 'includeStatus',
+				label: 'Include Status',
+				required: false,
+				inPath: false,
+				default: 'true',
+				placeholder: 'true/false (optional)'
+			},
+			{
+				name: 'time',
+				label: 'Time',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Unix timestamp (optional)'
 			}
 		]
 	},
@@ -296,6 +376,14 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'radius',
+				label: 'Radius',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Search radius in meters (optional)'
 			}
 		]
 	},
@@ -327,6 +415,14 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'radius',
+				label: 'Radius',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Search radius in meters (optional)'
 			}
 		]
 	},
@@ -380,7 +476,7 @@ export const endpoints = [
 				required: true,
 				inPath: false,
 				default: '',
-				placeholder: 'Timestamp'
+				placeholder: 'Unix timestamp in ms'
 			},
 			{
 				name: 'key',
@@ -389,6 +485,30 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'vehicleId',
+				label: 'Vehicle ID',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Vehicle id (optional)'
+			},
+			{
+				name: 'stopSequence',
+				label: 'Stop Sequence',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Stop sequence index (optional)'
+			},
+			{
+				name: 'time',
+				label: 'Time',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'Unix timestamp (optional)'
 			}
 		]
 	},
@@ -535,6 +655,14 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'date',
+				label: 'Date',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'YYYY-MM-DD (optional)'
 			}
 		]
 	},
@@ -558,6 +686,14 @@ export const endpoints = [
 				inPath: false,
 				default: 'test',
 				placeholder: 'API Key'
+			},
+			{
+				name: 'date',
+				label: 'Date',
+				required: false,
+				inPath: false,
+				default: '',
+				placeholder: 'YYYY-MM-DD (optional)'
 			}
 		]
 	},
